@@ -293,7 +293,7 @@ static char* MergeOperatorPartialMerge(
 }
 
 int main(int argc, char** argv) {
-  rocksdb_t* db;
+  rocksdb_t* db, *ck_db;
   rocksdb_comparator_t* cmp;
   rocksdb_cache_t* cache;
   rocksdb_env_t* env;
@@ -429,6 +429,26 @@ int main(int argc, char** argv) {
     CheckGet(db, roptions, "foo", "hello");
 
     rocksdb_backup_engine_close(be);
+  }
+
+  StartPhase("Checkpoint");
+  {
+      //rocksdb_options_set_create_if_missing(options, 1);
+      //db = rocksdb_open(options, dbname, &err);
+      //CheckNoError(err);
+      rocksdb_put(db, woptions, "foo", 3, "hello", 5, &err);
+      CheckNoError(err);
+      CheckGet(db, roptions, "foo", "hello");
+
+      rocksdb_create_checkpoint(db, "/tmp/foo.11", &err);
+      CheckNoError(err);
+      rocksdb_options_set_error_if_exists(options, 0);
+      ck_db = rocksdb_open(options, "/tmp/foo.11", &err);
+      CheckNoError(err);
+      rocksdb_delete(db, woptions, "foo", 3, &err);
+      CheckGet(ck_db, roptions, "foo", "hello");
+      CheckGet(db, roptions, "foo", NULL);
+      rocksdb_put(db, woptions, "foo", 3, "hello", 5, &err);
   }
 
   StartPhase("compactall");

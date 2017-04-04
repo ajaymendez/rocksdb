@@ -100,6 +100,7 @@ typedef struct rocksdb_readoptions_t     rocksdb_readoptions_t;
 typedef struct rocksdb_seqfile_t         rocksdb_seqfile_t;
 typedef struct rocksdb_slicetransform_t  rocksdb_slicetransform_t;
 typedef struct rocksdb_snapshot_t        rocksdb_snapshot_t;
+typedef struct rocksdb_checkpoint_t      rocksdb_checkpoint_t;
 typedef struct rocksdb_writablefile_t    rocksdb_writablefile_t;
 typedef struct rocksdb_writebatch_t      rocksdb_writebatch_t;
 typedef struct rocksdb_writebatch_wi_t   rocksdb_writebatch_wi_t;
@@ -285,6 +286,12 @@ extern ROCKSDB_LIBRARY_API const rocksdb_snapshot_t* rocksdb_create_snapshot(
 
 extern ROCKSDB_LIBRARY_API void rocksdb_release_snapshot(
     rocksdb_t* db, const rocksdb_snapshot_t* snapshot);
+
+extern ROCKSDB_LIBRARY_API void rocksdb_create_checkpoint(
+    rocksdb_t* db,
+    const char *path,
+    char **errptr);
+
 
 /* Returns NULL if property name is unknown.
    Else returns a pointer to a malloc()-ed null-terminated value. */

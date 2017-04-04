@@ -32,6 +32,7 @@
 #include "rocksdb/table.h"
 #include "rocksdb/rate_limiter.h"
 #include "rocksdb/utilities/backupable_db.h"
+#include "rocksdb/utilities/checkpoint.h"
 #include "rocksdb/utilities/write_batch_with_index.h"
 #include "utilities/merge_operators.h"
 
@@ -87,7 +88,7 @@ using rocksdb::RestoreOptions;
 using rocksdb::CompactRangeOptions;
 using rocksdb::RateLimiter;
 using rocksdb::NewGenericRateLimiter;
-
+using rocksdb::Checkpoint;
 using std::shared_ptr;
 
 extern "C" {
@@ -100,6 +101,7 @@ struct rocksdb_iterator_t        { Iterator*         rep; };
 struct rocksdb_writebatch_t      { WriteBatch        rep; };
 struct rocksdb_writebatch_wi_t   { WriteBatchWithIndex* rep; };
 struct rocksdb_snapshot_t        { const Snapshot*   rep; };
+struct rocksdb_checkpoint_t      { Checkpoint*       rep; };
 struct rocksdb_flushoptions_t    { FlushOptions      rep; };
 struct rocksdb_fifo_compaction_options_t { CompactionOptionsFIFO rep; };
 struct rocksdb_readoptions_t {
@@ -891,6 +893,21 @@ void rocksdb_release_snapshot(
     const rocksdb_snapshot_t* snapshot) {
   db->rep->ReleaseSnapshot(snapshot->rep);
   delete snapshot;
+}
+
+void rocksdb_create_checkpoint(
+    rocksdb_t* db,
+    const char *path,
+    char **errptr) {
+  rocksdb_checkpoint_t* checkpoint = new rocksdb_checkpoint_t;
+  if (SaveError(errptr, Checkpoint::Create(db->rep, &checkpoint->rep))) {
+    return;
+  }
+  if (SaveError(errptr, checkpoint->rep->CreateCheckpoint(path))) {
+    return;
+  }
+  delete checkpoint->rep;
+  delete checkpoint;
 }
 
 char* rocksdb_property_value(
